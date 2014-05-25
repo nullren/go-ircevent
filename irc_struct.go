@@ -20,6 +20,8 @@ type Connection struct {
 	UseSasl      bool
 	SaslUser     string
 	SaslPassword string
+	UseSocks     bool
+	SocksProxy   string
 	UseTLS       bool
 	TLSConfig    *tls.Config
 	Version      string

@@ -30,6 +30,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/net/proxy"
 )
 
 const (
@@ -417,14 +419,29 @@ func (irc *Connection) Connect(server string) error {
 		return errors.New("empty 'user'")
 	}
 
-	if irc.UseTLS {
-		dialer := &net.Dialer{Timeout: irc.Timeout}
-		irc.socket, err = tls.DialWithDialer(dialer, "tcp", irc.Server, irc.TLSConfig)
+	dialer := &net.Dialer{Timeout: irc.Timeout}
+	var socket net.Conn
+
+	if irc.UseSocks {
+		socksDialer, err := proxy.SOCKS5("tcp", irc.SocksProxy, nil, dialer)
+		if err != nil {
+			return err
+		}
+		socket, err = socksDialer.Dial("tcp", irc.Server)
+		if err != nil {
+			return err
+		}
 	} else {
-		irc.socket, err = net.DialTimeout("tcp", irc.Server, irc.Timeout)
+		socket, err = dialer.Dial("tcp", irc.Server)
+		if err != nil {
+			return err
+		}
 	}
-	if err != nil {
-		return err
+
+	if irc.UseTLS {
+		irc.socket = tls.Client(socket, irc.TLSConfig)
+	} else {
+		irc.socket = socket
 	}
 
 	irc.stopped = false
