@@ -436,7 +436,9 @@ func (irc *Connection) Connect(server string) error {
 	go irc.readLoop()
 	go irc.writeLoop()
 	go irc.pingLoop()
-	if len(irc.Password) > 0 {
+	if irc.UseSasl {
+		irc.pwrite <- fmt.Sprintf("CAP REQ :sasl\r\n")
+	} else if len(irc.Password) > 0 {
 		irc.pwrite <- fmt.Sprintf("PASS %s\r\n", irc.Password)
 	}
 	irc.pwrite <- fmt.Sprintf("NICK %s\r\n", irc.nick)

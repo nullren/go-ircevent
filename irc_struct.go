@@ -14,16 +14,19 @@ import (
 
 type Connection struct {
 	sync.WaitGroup
-	Debug     bool
-	Error     chan error
-	Password  string
-	UseTLS    bool
-	TLSConfig *tls.Config
-	Version   string
-	Timeout   time.Duration
-	PingFreq  time.Duration
-	KeepAlive time.Duration
-	Server    string
+	Debug        bool
+	Error        chan error
+	Password     string
+	UseSasl      bool
+	SaslUser     string
+	SaslPassword string
+	UseTLS       bool
+	TLSConfig    *tls.Config
+	Version      string
+	Timeout      time.Duration
+	PingFreq     time.Duration
+	KeepAlive    time.Duration
+	Server       string
 
 	socket net.Conn
 	pwrite chan string

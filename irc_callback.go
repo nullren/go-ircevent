@@ -1,6 +1,8 @@
 package irc
 
 import (
+	"encoding/base64"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -132,9 +134,22 @@ func (irc *Connection) RunCallbacks(event *Event) {
 	}
 }
 
+func saslAuthToken(user, password string) string {
+	concat := fmt.Sprintf("%s\x00%s\x00%s", user, user, password)
+	return base64.StdEncoding.EncodeToString([]byte(concat))
+}
+
 // Set up some initial callbacks to handle the IRC/CTCP protocol.
 func (irc *Connection) setupCallbacks() {
 	irc.events = make(map[string]map[int]func(*Event))
+
+	//Really basic SASL auth stuff
+	irc.AddCallback("CAP", func(e *Event) { irc.SendRaw("AUTHENTICATE PLAIN") })
+	irc.AddCallback("AUTHENTICATE", func(e *Event) {
+		irc.SendRawf("AUTHENTICATE %s", saslAuthToken(irc.SaslUser, irc.SaslPassword))
+	})
+	irc.AddCallback("903", func(e *Event) { irc.SendRaw("CAP END") })
+	irc.AddCallback("904", func(e *Event) { go irc.Disconnect() })
 
 	//Handle error events. This has to be called in a new thred to allow
 	//readLoop to exit
